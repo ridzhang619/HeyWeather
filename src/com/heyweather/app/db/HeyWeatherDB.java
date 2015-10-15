@@ -11,6 +11,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 public class HeyWeatherDB {
 	/**
@@ -30,6 +31,7 @@ public class HeyWeatherDB {
 	 * 单例模式,构造方法私有化,不能在其他类中创建此类对象
 	 * */
 	private HeyWeatherDB(Context context){
+		Log.i("Rid", "333333333333333333");
 		HeyWeatherOpenHelper dbHelper = 
 				new HeyWeatherOpenHelper(context, DB_NAME, null, VERSION);
 		db = dbHelper.getWritableDatabase();
@@ -39,6 +41,7 @@ public class HeyWeatherDB {
 	 * 获得HeyWeatherDB实例
 	 * */
 	public synchronized static HeyWeatherDB getInstance(Context context){
+		Log.i("Rid", "222222222222222222");
 		if (heyWeatherDB == null) {
 			heyWeatherDB = new HeyWeatherDB(context);
 		}
@@ -53,7 +56,7 @@ public class HeyWeatherDB {
 			ContentValues values = new ContentValues();
 			values.put("province_name", province.getProvinceName());
 			values.put("province_code", province.getProvinceCode());
-			db.insert(DB_NAME, null, values);
+			db.insert("Province", null, values);
 		}
 	}
 	
@@ -62,8 +65,8 @@ public class HeyWeatherDB {
 	 * */
 	public List<Province> loadProvince(){
 		List<Province> lists = new ArrayList<Province>();
-		Cursor cursor = db.query(DB_NAME, null, null, null, null, null, null);
-		if (cursor.moveToNext()) {
+		Cursor cursor = db.query("Province", null, null, null, null, null, null);
+		while (cursor.moveToNext()) {
 			Province province = new Province();
 			province.setId(cursor.getInt(cursor.getColumnIndex("id")));
 			province.setProvinceName(cursor.getString(cursor.getColumnIndex("province_name")));
@@ -78,10 +81,10 @@ public class HeyWeatherDB {
 	public void saveCity(City city){
 		if (city!=null) {
 			ContentValues values = new ContentValues();
-			values.put("province_name", city.getCityName());
-			values.put("province_code", city.getCityCode());
+			values.put("city_name", city.getCityName());
+			values.put("city_code", city.getCityCode());
 			values.put("province_id", city.getProvinceId());
-			db.insert(DB_NAME, null, values);
+			db.insert("City", null, values);
 		}
 	}
 	/**
@@ -89,8 +92,9 @@ public class HeyWeatherDB {
 	 * */
 	public List<City> loadCities(int provinceId){
 		List<City> lists = new ArrayList<City>();
-		Cursor cursor = db.query(DB_NAME, null, null, null, null, null, null);
-		if (cursor.moveToNext()) {
+		Cursor cursor = db.query("City", null, 
+				"province_Id=?", new String[]{String.valueOf(provinceId)}, null, null, null);
+		while (cursor.moveToNext()) {
 			City city = new City();
 			city.setId(cursor.getInt(cursor.getColumnIndex("id")));
 			city.setCityName(cursor.getString(cursor.getColumnIndex("city_name")));
@@ -110,20 +114,21 @@ public class HeyWeatherDB {
 			values.put("country_name", country.getCountryName());
 			values.put("country_code", country.getCountryCode());
 			values.put("city_id", country.getCityId());
-			db.insert(DB_NAME, null, values);
+			db.insert("Country", null, values);
 		}
 	}
 	/**
 	 * 从数据库读取某城市所有的县信息
 	 * */
-	public List<Country> countries(int cityId){
+	public List<Country> loadCountries(int cityId){
 		List<Country> lists = new ArrayList<Country>();
-		Cursor cursor = db.query(DB_NAME, null, null, null, null, null, null);
-		if (cursor.moveToNext()) {
+		Cursor cursor = db.query("Country", null, 
+				"city_Id=?", new String[]{String.valueOf(cityId)}, null, null, null);
+		while (cursor.moveToNext()) {
 			Country country = new Country();
 			country.setId(cursor.getInt(cursor.getColumnIndex("id")));
 			country.setCountryName(cursor.getString(cursor.getColumnIndex("country_name")));
-			country.setCountryName(cursor.getString(cursor.getColumnIndex("country_code")));
+			country.setCountryCode(cursor.getString(cursor.getColumnIndex("country_code")));
 			country.setCityId(cityId);
 			lists.add(country);
 		}
