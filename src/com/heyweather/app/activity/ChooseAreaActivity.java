@@ -9,16 +9,20 @@ import com.heyweather.app.db.HeyWeatherDB;
 import com.heyweather.app.model.City;
 import com.heyweather.app.model.Country;
 import com.heyweather.app.model.Province;
-import com.heyweather.app.util.Handle;
+import com.heyweather.app.util.Parse;
 import com.heyweather.app.util.HttpCallbackListener;
 import com.heyweather.app.util.HttpUtil;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
@@ -62,10 +66,21 @@ public class ChooseAreaActivity extends Activity {
 	 * 当前选中的级别
 	 */
 	private int currentLevel;
+	private boolean isFromWeatherActivity;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_choose_area);
+		isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity", false);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		//已经选择了城市且不是从WeatherActivity跳转过来,才会直接跳转到WeatherActivity
+		if (prefs.getBoolean("city_selected", false)&& !isFromWeatherActivity) {
+			Intent intent = new Intent(this, WeatherActivity.class);
+			startActivity(intent);
+			finish();
+			return;
+		}
 		titleText = (TextView)findViewById(R.id.title_text);
 		listView = (ListView)findViewById(R.id.lv_view);
 		adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,dataList);
@@ -79,10 +94,18 @@ public class ChooseAreaActivity extends Activity {
 				// TODO Auto-generated method stub
 				if (currentLevel == LEVEL_PROVINCE) {
 					selectedProvince = provinceList.get(position);
+					//加载城市列表
 					queryCities();
 				}else if(currentLevel == LEVEL_CITY){
 					selectedCity = cityList.get(position);
+					//加载县列表
 					queryCountries();
+				}else if (currentLevel == LEVEL_COUNTRY) {
+					String countryCode = countryList.get(position).getCountryCode();
+					Intent intent = new Intent(ChooseAreaActivity.this, WeatherActivity.class);
+					intent.putExtra("country_code", countryCode);
+					startActivity(intent);
+					finish();
 				}
 			}
 
@@ -171,11 +194,11 @@ public class ChooseAreaActivity extends Activity {
 				// TODO Auto-generated method stub
 				boolean result = false;
 				if ("province".equals(type)) {
-					result = Handle.handleProvinceResponse(heyWeatherDB, response);
+					result = Parse.handleProvinceResponse(heyWeatherDB, response);
 				}else if ("city".equals(type)) {
-					result = Handle.handleCityResponse(heyWeatherDB, response, selectedProvince.getId());
+					result = Parse.handleCityResponse(heyWeatherDB, response, selectedProvince.getId());
 				}else if ("country".equals(type)) {
-					result = Handle.handleCountryResponse(heyWeatherDB, response, selectedCity.getId());
+					result = Parse.handleCountryResponse(heyWeatherDB, response, selectedCity.getId());
 				}
 				if (result) {
 					//重新加载一遍省市县信息
@@ -230,6 +253,10 @@ public class ChooseAreaActivity extends Activity {
 		}else if (currentLevel==LEVEL_CITY) {
 			queryProvinces();
 		}else{
+			if (isFromWeatherActivity) {
+				Intent intent = new Intent(this, WeatherActivity.class);
+				startActivity(intent);
+			}
 			finish();
 		}
 	}

@@ -31,6 +31,13 @@ public class HeyWeatherOpenHelper extends SQLiteOpenHelper{
 			+ "country_name text,"
 			+ "country_code text,"
 			+ "city_id integer)";
+	/**
+	 * 天气队列添加表
+	 */
+	public static final String CREATE_ADD_CITY = "create table AddCity("
+			+ "id integer primary key autoincrement,"
+			+ "addcity_name text,"
+			+ "addcity_code text)";
 
 	public HeyWeatherOpenHelper(Context context, String name, CursorFactory factory, int version) {
 		super(context, name, factory, version);
